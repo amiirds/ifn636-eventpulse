@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.form_title }} | EventPulse{% endblock %}
+{% block content %}
+<section class="feedback-card"><p class="eyebrow">{{ event.name }} · {{ event.event_date }}</p><h1>{{ event.form_title }}</h1><p class="muted">{{ event.location }} · Your feedback is anonymous.</p>
+  <form method="post" class="stack-form"><fieldset><legend>{{ event.question_text }} <span class="required">Required</span></legend><div class="rating-options">{% for value in range(1, 6) %}<label><input type="radio" name="rating" value="{{ value }}"> <span>{{ value }}</span></label>{% endfor %}</div></fieldset><label>Anything else you would like to share? <span class="muted">Optional</span><textarea name="comment" rows="4" placeholder="Tell us what worked well or what could improve."></textarea></label><button class="primary-button" type="submit">Submit feedback</button></form>
+</section>
+{% endblock %}

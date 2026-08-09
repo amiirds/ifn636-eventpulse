@@ -1,0 +1,67 @@
+import os
+import tempfile
+import unittest
+
+from app import create_app
+
+
+class EventPulseTestCase(unittest.TestCase):
+    def setUp(self):
+        self.database = tempfile.NamedTemporaryFile(delete=False)
+        self.database.close()
+        self.app = create_app(
+            {"TESTING": True, "DATABASE": self.database.name, "SECRET_KEY": "test-secret", "DEMO_PASSWORD": "test-password"}
+        )
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        os.unlink(self.database.name)
+
+    def login(self):
+        return self.client.post(
+            "/login",
+            data={"email": "organiser@eventpulse.local", "password": "test-password"},
+            follow_redirects=True,
+        )
+
+    def create_and_publish_event(self):
+        self.login()
+        response = self.client.post(
+            "/events/new",
+            data={"name": "Campus Design Night", "event_date": "2026-09-01", "location": "QUT Gardens Point"},
+            follow_redirects=False,
+        )
+        event_id = int(response.headers["Location"].split("/")[2])
+        self.client.post(
+            f"/events/{event_id}/form",
+            data={"form_title": "Tell us about the night", "question_text": "Rate the event overall"},
+        )
+        self.client.post(f"/events/{event_id}/publish")
+        return event_id
+
+    def test_protected_events_redirect_to_login(self):
+        response = self.client.get("/events")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.headers["Location"])
+
+    def test_required_event_fields_show_validation(self):
+        self.login()
+        response = self.client.post("/events/new", data={"name": "", "event_date": "", "location": ""}, follow_redirects=True)
+        self.assertIn(b"Event name, date, and location are all required.", response.data)
+
+    def test_feedback_validation_persistence_and_results(self):
+        event_id = self.create_and_publish_event()
+        invalid = self.client.post(f"/feedback/{event_id}", data={"comment": "Good session"}, follow_redirects=True)
+        self.assertIn(b"Choose a rating from 1 to 5", invalid.data)
+        valid = self.client.post(
+            f"/feedback/{event_id}", data={"rating": "5", "comment": "Great presenters"}, follow_redirects=True
+        )
+        self.assertIn(b"Feedback received", valid.data)
+        results = self.client.get(f"/events/{event_id}/results")
+        self.assertIn(b">1<", results.data)
+        self.assertIn(b"5.0", results.data)
+        self.assertIn(b"Great presenters", results.data)
+
+
+if __name__ == "__main__":
+    unittest.main()

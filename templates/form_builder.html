@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Build form | EventPulse{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">{{ event.name }}</p><h1>Build feedback form</h1><p class="muted">The overall rating is required; the optional comment is always available to attendees.</p></div><span class="status {{ 'live' if event.published else 'draft' }}">{{ 'Live' if event.published else 'Draft' }}</span></div>
+<section class="two-column">
+  <form method="post" class="form-card stack-form"><label>Form title<input name="form_title" required value="{{ event.form_title }}"></label><label>Required rating question<input name="question_text" required value="{{ event.question_text }}"></label><div class="form-actions"><a href="{{ url_for('events') }}">Back to events</a><button class="secondary-button" type="submit">Save form</button></div></form>
+  <aside class="preview-card"><p class="eyebrow">Attendee preview</p><h2>{{ event.form_title }}</h2><p>{{ event.question_text }}</p><div class="rating-preview" aria-label="Rating from one to five"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><p class="muted">Optional comment</p></aside>
+</section>
+<section class="publish-card">
+  {% if event.published %}
+    <p class="eyebrow">Published form</p><h2>Your public attendee link is ready</h2><code>{{ url_for('feedback', event_id=event.id, _external=true) }}</code><div class="card-actions"><a class="primary-button" href="{{ url_for('feedback', event_id=event.id) }}" target="_blank" rel="noopener">Open public form</a><a href="{{ url_for('results', event_id=event.id) }}">View results</a></div>
+  {% else %}
+    <p class="eyebrow">Step 2 of 2</p><h2>Ready to collect feedback?</h2><p>Publishing makes this form accessible through a public attendee link.</p><form method="post" action="{{ url_for('publish_event', event_id=event.id) }}"><button class="primary-button" type="submit">Publish feedback form</button></form>
+  {% endif %}
+</section>
+{% endblock %}

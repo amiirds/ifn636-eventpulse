@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Organiser sign in | EventPulse{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">Organiser workspace</p>
+  <h1>Turn event feedback into a clearer next step.</h1>
+  <p class="muted">Sign in to create, publish and review your event feedback forms.</p>
+  <form method="post" class="stack-form">
+    <label>Email<input type="email" name="email" value="organiser@eventpulse.local" required autocomplete="email"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="primary-button" type="submit">Sign in</button>
+  </form>
+  <p class="hint">Local demo: use the password configured in <code>EVENTPULSE_DEMO_PASSWORD</code>.</p>
+</section>
+{% endblock %}
