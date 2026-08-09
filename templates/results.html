@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Results | EventPulse{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">{{ event.name }}</p><h1>Feedback results</h1><p class="muted">{{ event.event_date }} · {{ event.location }}</p></div><a class="secondary-button" href="{{ url_for('edit_form', event_id=event.id) }}">Manage form</a></div>
+{% if summary.response_count %}
+  <section class="metric-grid"><article><p>Responses</p><strong>{{ summary.response_count }}</strong></article><article><p>Average rating</p><strong>{{ '%.1f'|format(summary.average_rating) }}<small>/5</small></strong></article><article><p>Form status</p><strong>{{ 'Live' if event.published else 'Draft' }}</strong></article></section>
+  <section class="comments-card"><h2>Recent comments</h2>{% if comments %}<ul>{% for response in comments %}<li><span class="rating-badge">{{ response.rating }}/5</span><p>{{ response.comment }}</p><small>{{ response.created_at }}</small></li>{% endfor %}</ul>{% else %}<p class="muted">Responses have ratings, but no attendee has added a comment yet.</p>{% endif %}</section>
+{% else %}
+  <section class="empty-state"><p class="eyebrow">No responses yet</p><h2>Your results will appear here.</h2><p>Share the public link with attendees, then return here to see the response count, average rating and comments.</p>{% if event.published %}<code>{{ url_for('feedback', event_id=event.id, _external=true) }}</code>{% else %}<a class="primary-button" href="{{ url_for('edit_form', event_id=event.id) }}">Publish feedback form</a>{% endif %}</section>
+{% endif %}
+{% endblock %}

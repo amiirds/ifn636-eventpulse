@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Create event | EventPulse{% endblock %}
+{% block content %}
+<section class="form-card"><p class="eyebrow">Step 1 of 2</p><h1>Create an event</h1><p class="muted">These details appear on the attendee feedback form.</p>
+  <form method="post" class="stack-form">
+    <label>Event name<input name="name" required value="{{ request.form.get('name', '') }}"></label>
+    <label>Event date<input type="date" name="event_date" required value="{{ request.form.get('event_date', '') }}"></label>
+    <label>Location<input name="location" required value="{{ request.form.get('location', '') }}"></label>
+    <div class="form-actions"><a href="{{ url_for('events') }}">Cancel</a><button class="primary-button" type="submit">Continue to form builder</button></div>
+  </form>
+</section>
+{% endblock %}

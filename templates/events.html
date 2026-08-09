@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}My events | EventPulse{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">Organiser workspace</p><h1>My events</h1><p class="muted">Create a short feedback experience while the event is still fresh.</p></div>
+  <a class="primary-button" href="{{ url_for('create_event') }}">Create event</a>
+</div>
+{% if events %}
+  <section class="event-grid">
+    {% for event in events %}
+      <article class="event-card">
+        <span class="status {{ 'live' if event.published else 'draft' }}">{{ 'Live' if event.published else 'Draft' }}</span>
+        <h2>{{ event.name }}</h2>
+        <p>{{ event.event_date }} · {{ event.location }}</p>
+        <div class="card-actions"><a href="{{ url_for('edit_form', event_id=event.id) }}">Edit form</a><a href="{{ url_for('results', event_id=event.id) }}">View results</a></div>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty-state"><h2>Start with your first event</h2><p>Once you publish a form, this workspace will show its live status and feedback results.</p><a class="primary-button" href="{{ url_for('create_event') }}">Create event</a></section>
+{% endif %}
+{% endblock %}
