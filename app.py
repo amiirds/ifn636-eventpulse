@@ -1,12 +1,16 @@
 """EventPulse - a focused Flask event-feedback demonstrator for IFN636."""
 
+import json
 import os
 import sqlite3
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -45,12 +49,29 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def load_local_env(env_path: Path) -> None:
+    """Load simple KEY=value pairs for local development without a dependency."""
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value.strip().strip("'\"")
+
+
 def create_app(test_config=None):
+    load_local_env(Path(__file__).with_name(".env"))
     app = Flask(__name__)
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("EVENTPULSE_SECRET_KEY", "development-only-change-me"),
         DATABASE=str(Path(app.instance_path) / "eventpulse.sqlite"),
         DEMO_PASSWORD=os.environ.get("EVENTPULSE_DEMO_PASSWORD", "eventpulse-demo"),
+        GEOAPIFY_API_KEY=os.environ.get("GEOAPIFY_API_KEY", ""),
     )
     if test_config:
         app.config.update(test_config)
@@ -169,6 +190,43 @@ def create_app(test_config=None):
                 flash("Event created. Now configure its feedback form.", "success")
                 return redirect(url_for("edit_form", event_id=cursor.lastrowid))
         return render_template("event_new.html")
+
+    @app.get("/api/location-suggestions")
+    @login_required
+    def location_suggestions():
+        """Proxy venue suggestions so the Geoapify key is never sent to the browser."""
+        query = request.args.get("q", "").strip()
+        if len(query) < 3:
+            return jsonify({"results": []})
+
+        api_key = app.config["GEOAPIFY_API_KEY"]
+        if not api_key:
+            return jsonify({"results": [], "message": "Location suggestions are unavailable."})
+
+        params = urlencode(
+            {
+                "text": query,
+                "format": "json",
+                "lang": "en",
+                "limit": 5,
+                "apiKey": api_key,
+            }
+        )
+        try:
+            with urlopen(
+                f"https://api.geoapify.com/v1/geocode/autocomplete?{params}", timeout=4
+            ) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+            app.logger.warning("Geoapify location suggestions were unavailable.")
+            return jsonify({"results": [], "message": "Location suggestions are unavailable."}), 502
+
+        results = [
+            {"formatted": item["formatted"]}
+            for item in payload.get("results", [])
+            if item.get("formatted")
+        ]
+        return jsonify({"results": results})
 
     @app.route("/events/<int:event_id>/form", methods=("GET", "POST"))
     @login_required

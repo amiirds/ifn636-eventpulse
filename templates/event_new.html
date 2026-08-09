@@ -5,7 +5,13 @@
   <form method="post" class="stack-form">
     <label>Event name<input name="name" required value="{{ request.form.get('name', '') }}"></label>
     <label>Event date<input type="date" name="event_date" required value="{{ request.form.get('event_date', '') }}"></label>
-    <label>Location<input name="location" required value="{{ request.form.get('location', '') }}"></label>
+    <div class="location-autocomplete" data-suggestions-url="{{ url_for('location_suggestions') }}">
+      <label for="event-location">Location
+        <input id="event-location" name="location" required autocomplete="off" aria-autocomplete="list" aria-controls="location-suggestions" aria-expanded="false" value="{{ request.form.get('location', '') }}">
+      </label>
+      <div id="location-suggestions" class="location-suggestions" role="listbox" hidden></div>
+      <p class="hint location-hint" aria-live="polite">Start typing a venue or address to see suggestions.</p>
+    </div>
     <div class="form-actions"><a href="{{ url_for('events') }}">Cancel</a><button class="primary-button" type="submit">Continue to form builder</button></div>
   </form>
 </section>

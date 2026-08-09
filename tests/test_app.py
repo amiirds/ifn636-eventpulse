@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 
 from app import create_app
 
@@ -48,6 +49,28 @@ class EventPulseTestCase(unittest.TestCase):
         self.login()
         response = self.client.post("/events/new", data={"name": "", "event_date": "", "location": ""}, follow_redirects=True)
         self.assertIn(b"Event name, date, and location are all required.", response.data)
+
+    def test_location_suggestions_require_sign_in(self):
+        response = self.client.get("/api/location-suggestions?q=QUT")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.headers["Location"])
+
+    @patch("app.urlopen")
+    def test_location_suggestions_proxy_formatted_results(self, mocked_urlopen):
+        self.app.config["GEOAPIFY_API_KEY"] = "test-key"
+        response_object = MagicMock()
+        response_object.read.return_value = b'{"results": [{"formatted": "QUT Gardens Point, Brisbane QLD, Australia"}]}'
+        mocked_urlopen.return_value.__enter__.return_value = response_object
+
+        self.login()
+        response = self.client.get("/api/location-suggestions?q=QUT Gardens")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {"results": [{"formatted": "QUT Gardens Point, Brisbane QLD, Australia"}]},
+        )
+        self.assertIn("apiKey=test-key", mocked_urlopen.call_args.args[0])
 
     def test_feedback_validation_persistence_and_results(self):
         event_id = self.create_and_publish_event()
