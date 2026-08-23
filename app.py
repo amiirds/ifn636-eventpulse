@@ -382,5 +382,11 @@ app = create_app()
 
 if __name__ == "__main__":
     # host 0.0.0.0 makes the app answer requests from outside the machine, which the
-    # EC2 deployment needs. On EC2 the port is 5001.
-    app.run(host="0.0.0.0", port=5000, debug=os.environ.get("FLASK_DEBUG") == "1")
+    # EC2 deployment needs. The port comes from the environment so the same commit
+    # runs locally on 5000 and on EC2 on 5001. Before this, the port was edited by
+    # hand on the server, which left the deployed file permanently out of step with git.
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("EVENTPULSE_PORT", "5000")),
+        debug=os.environ.get("FLASK_DEBUG") == "1",
+    )
