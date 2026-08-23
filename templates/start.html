@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Choose your role | EventPulse{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">Event feedback platform</p>
+    <h1>Make every event better than the last.</h1>
+    <p class="muted">Choose a role to explore the complete feedback experience.</p>
+  </div>
+</div>
+<section class="role-grid">
+  <a class="role-card" href="{{ url_for('login') }}">
+    <span class="role-icon organiser" aria-hidden="true">&#8599;</span>
+    <h2>I&rsquo;m an organiser</h2>
+    <p>Build a form, publish it and understand the results.</p>
+  </a>
+  {% if latest_published %}
+    <a class="role-card" href="{{ url_for('feedback', event_id=latest_published['id']) }}">
+      <span class="role-icon attendee" aria-hidden="true">&#9733;</span>
+      <h2>I&rsquo;m an attendee</h2>
+      <p>Share your experience in a quick, accessible survey.</p>
+    </a>
+  {% else %}
+    <div class="role-card disabled">
+      <span class="role-icon attendee" aria-hidden="true">&#9733;</span>
+      <h2>I&rsquo;m an attendee</h2>
+      <p>No feedback form is published yet. Organisers share a direct link when a form goes live.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

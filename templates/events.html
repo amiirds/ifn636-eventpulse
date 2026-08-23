@@ -5,6 +5,11 @@
   <div><p class="eyebrow">Organiser workspace</p><h1>My events</h1><p class="muted">Create a short feedback experience while the event is still fresh.</p></div>
   <a class="primary-button" href="{{ url_for('create_event') }}">Create event</a>
 </div>
+<form class="event-filters" method="get" action="{{ url_for('events') }}" role="search">
+  <label class="visually-hidden" for="event-search">Search events by name</label>
+  <input id="event-search" type="search" name="q" value="{{ search }}" placeholder="Search events" autocomplete="off">
+  <button class="text-button" type="submit">Search</button>
+</form>
 {% if events %}
   <section class="event-grid">
     {% for event in events %}
@@ -12,10 +17,13 @@
         <span class="status {{ 'live' if event.published else 'draft' }}">{{ 'Live' if event.published else 'Draft' }}</span>
         <h2>{{ event.name }}</h2>
         <p>{{ event.event_date }} · {{ event.location }}</p>
+        <p class="response-count">{{ event.response_count }} response{{ '' if event.response_count == 1 else 's' }}</p>
         <div class="card-actions"><a href="{{ url_for('edit_form', event_id=event.id) }}">Edit form</a><a href="{{ url_for('results', event_id=event.id) }}">View results</a></div>
       </article>
     {% endfor %}
   </section>
+{% elif search %}
+  <section class="empty-state"><h2>No events match this search</h2><p>Change the search words to see more events.</p><a class="text-button" href="{{ url_for('events') }}">Clear search</a></section>
 {% else %}
   <section class="empty-state"><h2>Start with your first event</h2><p>Once you publish a form, this workspace will show its live status and feedback results.</p><a class="primary-button" href="{{ url_for('create_event') }}">Create event</a></section>
 {% endif %}
