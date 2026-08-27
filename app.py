@@ -88,8 +88,7 @@ def create_app(test_config=None):
         # request is faster than opening a new one for every query.
         if "db" not in g:
             g.db = sqlite3.connect(app.config["DATABASE"])
-                # Row lets templates use event.name instead of event[2], which is far
-            # easier to read and does not break when a column moves.
+            # Row so templates can say event.name instead of event[2]
             g.db.row_factory = sqlite3.Row
         return g.db
 

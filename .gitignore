@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Secrets and local data
+*.pem
+*.key
+id_rsa*
+*.sqlite
+*.sqlite3

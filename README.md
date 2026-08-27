@@ -1,6 +1,8 @@
 # EventPulse
 
-EventPulse is an IFN636 Assessment 1 web application for gathering short, anonymous event feedback. An authenticated organiser creates an event, configures and publishes a rating form, and reviews event-level results. An attendee uses a public link to submit a required 1-5 rating and an optional comment.
+EventPulse collects short anonymous feedback after an event. An organiser signs in, sets up a form and reads the results. An attendee gets a link, picks a rating from 1 to 5, and can add a comment.
+
+Built for IFN636 Assessment 1.
 
 **Live deployment:** http://52.62.63.13:5001/
 **EC2 instance:** `i-0d6a1b603d0a1e905` (REZ-Shiraz), region `ap-southeast-2`
@@ -9,8 +11,9 @@ EventPulse is an IFN636 Assessment 1 web application for gathering short, anonym
 
 Two roles and two complete workflows.
 
-**Organiser** — signs in, creates an event, configures the rating question, publishes the form, reads the results.
-**Attendee** — opens the public link, submits an anonymous rating and an optional comment.
+Organiser: signs in, creates an event, sets the rating question, publishes the form, reads results.
+
+Attendee: opens the public link, leaves a rating and maybe a comment.
 
 Implemented:
 
@@ -84,10 +87,25 @@ Manual deployment to EC2. There is no CI or CD, which the assessment allows.
 # on the instance, through AWS Session Manager
 cd ~/ifn636-eventpulse
 git pull
-export EVENTPULSE_PORT=5001
-setsid nohup .venv/bin/python app.py > ~/eventpulse.log 2>&1 < /dev/null &
-ss -ltn | grep 5001
+sudo systemctl restart eventpulse
+systemctl is-active eventpulse
 ```
+
+The app runs as a systemd service, `/etc/systemd/system/eventpulse.service`:
+
+```ini
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/ifn636-eventpulse
+Environment=EVENTPULSE_PORT=5001
+ExecStart=/home/ubuntu/ifn636-eventpulse/.venv/bin/python app.py
+Restart=always
+RestartSec=5
+```
+
+It was started by hand with `nohup` at first. That did not survive a reboot, and the instance restarted twice, so the app was found stopped both times. systemd starts it on boot and restarts it within five seconds if it dies.
+
+Secrets live in `/home/ubuntu/ifn636-eventpulse/.env` on the instance, mode 600, owned by `ubuntu`. That file sets `EVENTPULSE_SECRET_KEY`, `EVENTPULSE_DEMO_PASSWORD` and `GEOAPIFY_API_KEY`. None of the code defaults are used in the deployment.
 
 The port comes from `EVENTPULSE_PORT` so the same commit runs on 5000 locally and 5001 on EC2. Earlier the port was edited by hand on the server, which left the deployed file permanently out of step with the repository.
 
@@ -103,10 +121,14 @@ An Elastic IP is attached, so the public address survives a stop and a start.
 - Inbound access on EC2 is limited to TCP 5001 from single addresses. Nothing else is opened.
 
 ## Known limitations
+- No CSRF token on any POST route. A signed-in organiser could be made to publish a draft or sign out by a crafted page on another site.
+- No rate limit on sign in. Nothing slows down repeated password guesses.
+- Publishing is one way. There is no unpublish route, so a live form stays live.
+- Nothing stops one attendee submitting many responses. Anonymity was chosen over deduplication, and that trade is deliberate.
+- The seeded organiser is the only account. There is no delete operation on any record.
 
 - The application runs on the Flask development server. A production deployment would use gunicorn behind nginx.
 - Traffic is HTTP, not HTTPS.
-- SQLite accepts one writer at a time. That suits this scale and would not suit a busy production system.
-- The attendee card on the landing page links to the newest published event. That is a convenience for the demonstration, not real attendee behaviour, which is to follow a link the organiser shares.
+- SQLite takes one writer at a time. Fine for a demo, wrong for anything busy.
+- The attendee card on the landing page just links to the newest published event. That is a shortcut for the demo. In practice the organiser sends the link.
 - The V2 Figma prototype also shows sidebar navigation, a status filter, a Settings page and an Insights view. Those stay as design intent for a later iteration.
-- The service does not restart by itself after a reboot.
