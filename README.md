@@ -4,7 +4,7 @@ EventPulse collects short anonymous feedback after an event. An organiser signs 
 
 Built for IFN636 Assessment 1.
 
-**Live deployment:** http://52.62.63.13:5001/
+Live deployment: http://54.206.247.238:5001/ (This is the second Elastic IP, so the IP address may change again later.)
 **EC2 instance:** `i-0d6a1b603d0a1e905` (REZ-Shiraz), region `ap-southeast-2`
 
 ## Scope
